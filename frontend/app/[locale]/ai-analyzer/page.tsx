@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useTranslations } from "next-intl";
 
 // ─── Types ───────────────────────────────────────────────
 interface AnalysisData {
@@ -45,6 +46,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 // ─── Main ───────────────────────────────────────────────
 export default function AIAnalyzer() {
   const { isChecking, isAuthenticated } = useRequireAuth();
+  const t = useTranslations("aiAnalyzer.toast");
 
   const [file, setFile]   = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,8 +76,19 @@ export default function AIAnalyzer() {
       const apiUrl = typeof window === "undefined"
         ? (process.env.INTERNAL_API_URL || "http://app:3000")
         : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000");
-      const res = await fetch(`${apiUrl}/api/analyze`, { method: "POST", body: formData });
+        
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${apiUrl}/api/analyze`, { 
+        method: "POST", 
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       const result = await res.json();
+      if (res.status === 403) {
+        throw new Error(t("subscriptionRequired"));
+      }
       if (!res.ok) throw new Error(result.error);
       setData(result.data);
       showToast("تم التحليل بنجاح");

@@ -373,8 +373,18 @@ export default function AdminBookingsTable() {
               {selectedBooking.proofUrl && (
                 <div className="bg-black/40 border border-white/[0.05] rounded-xl p-4">
                   <p className="text-white/25 text-[10px] font-bold uppercase tracking-widest mb-3">{t('proofOfPayment')}</p>
-                  {selectedBooking.proofUrl.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                  {selectedBooking.proofUrl.match(/\.(jpg|jpeg|png|webp)$/i) || selectedBooking.proofUrl.startsWith('data:image/') ? (
                     <a href={selectedBooking.proofUrl} target="_blank" rel="noreferrer"
+                      onClick={(e) => {
+                        if (selectedBooking.proofUrl?.startsWith('data:image/')) {
+                          e.preventDefault();
+                          const win = window.open('', '_blank');
+                          if (win) {
+                            win.document.write(`<body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;min-height:100vh;"><img src="${selectedBooking.proofUrl}" style="max-width:100%;max-height:100vh;"/></body>`);
+                            win.document.close();
+                          }
+                        }
+                      }}
                       className="block relative group rounded-xl overflow-hidden border border-white/[0.08]">
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center text-sm font-bold backdrop-blur-sm">
                         View Full

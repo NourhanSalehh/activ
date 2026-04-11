@@ -11,7 +11,8 @@ dotenv.config();
 const analysisController = require("./controllers/analysisController.js");
 const Analysis = require("./models/Analysis.js");
 
-// 3.5️⃣ Import Routers
+// 3.5️⃣ Import Routers & Middlewares
+const authMiddleware = require("./middleware/authMiddleware.js");
 const authRouter = require("./routes/auth.js");
 const bookingRouter = require("./routes/booking.js");
 const paymentRouter = require("./routes/payment.js");
@@ -33,23 +34,40 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
-app.use(express.json());
-
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // 6️⃣ Multer setup for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
 
-// 7️⃣ Database Connection
+// 7️⃣ Database Connection (Serverless optimized)
 const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/coaching_db";
-mongoose
-  .connect(mongoURI)
-  .then(() => {
-    console.log("✅ Connected to MongoDB");
-    require("./utils/seeder")();
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    console.log("💡 Make sure MongoDB is running locally or check your URI in .env");
-  });
+
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectDB() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(mongoURI).then((mongooseInstance) => {
+      console.log("✅ Connected to MongoDB");
+      require("./utils/seeder")();
+      return mongooseInstance;
+    }).catch((err) => {
+      console.error("❌ MongoDB connection error:", err);
+      console.log("💡 Make sure MongoDB is running locally or check your URI in .env");
+      throw err;
+    });
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Establish connection for incoming requests
+connectDB();
 
 // 8️⃣ Routes
 
@@ -67,10 +85,10 @@ app.use("/api/heroes", heroesRouter);
 app.use("/api/complaints", complaintsRouter);
 
 // Analyze uploaded Word file
-app.post("/api/analyze", upload.single("file"), analysisController.analyzeFile);
+app.post("/api/analyze", [authMiddleware, upload.single("file")], analysisController.analyzeFile);
 
 // Get analysis history
-app.get("/api/history", async (req, res) => {
+app.get("/api/history", authMiddleware, async (req, res) => {
     try {
         const history = await Analysis.find().sort({ createdAt: -1 });
         res.json(history);

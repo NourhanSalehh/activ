@@ -298,7 +298,8 @@
       "pdf": "Generating PDF...",
       "pdfDone": "PDF downloaded successfully",
       "error": "Unexpected error occurred",
-      "invalidFile": "Please upload a .docx file"
+      "invalidFile": "Please upload a .docx file",
+      "subscriptionRequired": "Sorry, this feature is for subscribers only. It will be unlocked automatically once you subscribe to one of the Academy's plans and your booking is confirmed."
     },
     "resultTitle": "Analysis Report",
     "cards": {

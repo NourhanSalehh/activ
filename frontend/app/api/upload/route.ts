@@ -20,22 +20,16 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    
-    // Ensure directory exists
-    await mkdir(uploadDir, { recursive: true });
-
-    // 🔒 Path Traversal Fix: Strictly sanitize filename
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-    const uniqueFileName = `${Date.now()}-${sanitizedName}`;
-    const path = join(uploadDir, uniqueFileName);
-
-    await writeFile(path, buffer);
+    // 🔒 Vercel Serverless Fix: Do not write to disk (it's read-only on Vercel).
+    // Instead, convert the image to a Base64 Data URI and save it directly.
+    const base64String = buffer.toString('base64');
+    const mimeType = file.type || 'image/jpeg';
+    const dataUri = `data:${mimeType};base64,${base64String}`;
 
     return NextResponse.json({ 
       success: true, 
-      url: `/uploads/${uniqueFileName}`,
-      fileName: uniqueFileName
+      url: dataUri,
+      fileName: file.name
     });
   } catch (error) {
     console.error("Upload error:", error);

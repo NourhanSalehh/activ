@@ -205,6 +205,16 @@ export default function MyBookingsPage({ params }) {
                   {booking.proofUrl && (
                     <div className="px-5 pb-3">
                       <a href={booking.proofUrl} target="_blank" rel="noopener noreferrer"
+                        onClick={(e) => {
+                          if (booking.proofUrl?.startsWith('data:image/')) {
+                            e.preventDefault();
+                            const win = window.open('', '_blank');
+                            if (win) {
+                              win.document.write(`<body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;min-height:100vh;"><img src="${booking.proofUrl}" style="max-width:100%;max-height:100vh;"/></body>`);
+                              win.document.close();
+                            }
+                          }
+                        }}
                         className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition bg-red-950/20 border border-red-900/20 rounded-lg px-3 py-1.5">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg> {isAr ? 'عرض إثبات الدفع' : 'View Payment Proof'}
                       </a>
